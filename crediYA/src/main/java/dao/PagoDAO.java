@@ -1,6 +1,7 @@
 package dao;
 
 import database.Conexion;
+import exception.ValidacionException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.Date;
@@ -26,16 +27,20 @@ public class PagoDAO {
         this.conexion = Conexion.getInstancia();
     }
 
-    public boolean registrarPago(Pago pago) {
+    public boolean registrarPago(Pago pago) throws ValidacionException {
         if (pago == null || pago.getPrestamoId() == null) {
-            System.out.println("[PagoDAO] Error: El pago o préstamo es nulo.");
-            return false;
+            throw new ValidacionException("El registro de pago y su prestamo asociado no pueden ser nulos.");
+        }
+
+        if (pago.getMonto() == null || pago.getMonto().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidacionException("El monto a pagar debe ser mayor a cero.");
         }
 
         if (!pago.validarConsistenciaMonto()) {
-            System.out.println("[PagoDAO] Error: El monto total (" + pago.getMonto()
-                + ") no coincide con el desglose (mora + interes + capital).");
-            return false;
+            throw new ValidacionException("El monto total ($" + pago.getMonto()
+                + ") no coincide con el desglose (mora: $" + pago.getMontoMora()
+                + " + interes: $" + pago.getMontoInteres()
+                + " + capital: $" + pago.getMontoCapital() + ").");
         }
 
         String sqlInsertPago = "INSERT INTO pagos (prestamo_id, cuota_id, fecha_pago, monto, monto_mora, "
@@ -129,12 +134,12 @@ public class PagoDAO {
 
             } catch (SQLException e) {
                 con.rollback();
-                System.out.println("[PagoDAO] Error en transacción al registrar pago: " + e.getMessage());
+                System.out.println("[PagoDAO] Error en transaccion al registrar pago: " + e.getMessage());
             } finally {
                 con.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            System.out.println("[PagoDAO] Error de conexión: " + e.getMessage());
+            System.out.println("[PagoDAO] Error de conexion: " + e.getMessage());
         }
         return false;
     }
@@ -152,7 +157,7 @@ public class PagoDAO {
                 }
             }
         } catch (SQLException e) {
-            System.out.println("[PagoDAO] Error SQL al listar pagos por préstamo: " + e.getMessage());
+            System.out.println("[PagoDAO] Error SQL al listar pagos por prestamo: " + e.getMessage());
         }
         return lista;
     }

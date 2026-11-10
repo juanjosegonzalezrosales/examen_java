@@ -1,6 +1,8 @@
 package dao;
 
 import database.Conexion;
+import exception.ReglaNegocioException;
+import exception.ValidacionException;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -14,8 +16,10 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import model.Cuota;
+import model.Empleado;
 import model.Prestamo;
 import model.Solicitud;
+import model.amortizacion.CreadorAmortizacion;
 import model.enums.EstadoCuota;
 import model.enums.EstadoPrestamo;
 import model.enums.EstadoSolicitud;
@@ -31,21 +35,26 @@ public class PrestamoDAO {
         this.solicitudDAO = new SolicitudDAO();
     }
 
-    public boolean crearPrestamo(Prestamo prestamo) {
+    public boolean crearPrestamo(Prestamo prestamo) throws ValidacionException, ReglaNegocioException {
+        return crearPrestamo(prestamo, null);
+    }
+
+    public boolean crearPrestamo(Prestamo prestamo, Empleado desembolsador) throws ValidacionException, ReglaNegocioException {
         if (prestamo == null || prestamo.getSolicitud() == null) {
-            System.out.println("[PrestamoDAO] Error: El préstamo y su solicitud no pueden ser nulos.");
-            return false;
+            throw new ValidacionException("El prestamo y su solicitud no pueden ser nulos.");
         }
 
         Solicitud sol = prestamo.getSolicitud();
         if (sol.getEstado() != EstadoSolicitud.APROBADA) {
-            System.out.println("[PrestamoDAO] Error: Solo se pueden originar préstamos de solicitudes APROBADAS.");
-            return false;
+            throw new ReglaNegocioException("Solo se pueden originar prestamos de solicitudes en estado APROBADA. Estado actual: " + sol.getEstado());
         }
 
         if (buscarPorSolicitudId(sol.getId()) != null) {
-            System.out.println("[PrestamoDAO] Error: Ya existe un contrato de préstamo para la solicitud #" + sol.getId());
-            return false;
+            throw new ReglaNegocioException("Ya existe un contrato de prestamo para la solicitud #" + sol.getId());
+        }
+
+        if (prestamo.getTasaInteresAnual() == null || prestamo.getTasaInteresAnual().compareTo(BigDecimal.ZERO) < 0) {
+            throw new ValidacionException("La tasa de interes anual no puede ser nula ni negativa.");
         }
 
         calcularPlanAmortizacion(prestamo);
@@ -58,6 +67,8 @@ public class PrestamoDAO {
                         + "valor_cuota, valor_capital, valor_interes, saldo_restante_capital, valor_pagado, "
                         + "capital_pagado, interes_pagado, vigente, estado) "
                         + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0.00, 0.00, 0.00, TRUE, 'PENDIENTE')";
+
+        String sqlActualizarSol = "UPDATE solicitudes SET estado = ?, observaciones = ? WHERE id = ?";
 
         try (Connection con = conexion.conectar()) {
             con.setAutoCommit(false);
@@ -80,7 +91,7 @@ public class PrestamoDAO {
                         if (rs.next()) {
                             prestamo.setId(rs.getInt(1));
                         } else {
-                            throw new SQLException("No se obtuvo el ID generado para el préstamo.");
+                            throw new SQLException("No se obtuvo el ID generado para el prestamo.");
                         }
                     }
                 }
@@ -100,17 +111,35 @@ public class PrestamoDAO {
                     psC.executeBatch();
                 }
 
+                String notaDesembolso = "[" + LocalDate.now() + "] Desembolso completado por "
+                        + (desembolsador != null ? desembolsador.getRol() + " " + desembolsador.getNombre() + " (ID: " + desembolsador.getId() + ")" : "Sistema")
+                        + ". Prestamo originado: #" + prestamo.getId();
+                String nuevasObs = (sol.getObservaciones() == null || sol.getObservaciones().isBlank())
+                        ? notaDesembolso
+                        : sol.getObservaciones() + " | " + notaDesembolso;
+
+                try (PreparedStatement psS = con.prepareStatement(sqlActualizarSol)) {
+                    psS.setString(1, EstadoSolicitud.DESEMBOLSADO.name());
+                    psS.setString(2, nuevasObs);
+                    psS.setInt(3, sol.getId());
+                    psS.executeUpdate();
+                }
+
                 con.commit();
+
+                sol.setEstado(EstadoSolicitud.DESEMBOLSADO);
+                sol.setObservaciones(nuevasObs);
+
                 return true;
 
             } catch (SQLException e) {
                 con.rollback();
-                System.out.println("[PrestamoDAO] Error en transacción al crear préstamo: " + e.getMessage());
+                System.out.println("[PrestamoDAO] Error en transaccion al crear prestamo: " + e.getMessage());
             } finally {
                 con.setAutoCommit(true);
             }
         } catch (SQLException e) {
-            System.out.println("[PrestamoDAO] Error de conexión: " + e.getMessage());
+            System.out.println("[PrestamoDAO] Error de conexion: " + e.getMessage());
         }
         return false;
     }
@@ -129,7 +158,7 @@ public class PrestamoDAO {
                 }
             }
         } catch (SQLException e) {
-            System.out.println("[PrestamoDAO] Error SQL al buscar préstamo por ID: " + e.getMessage());
+            System.out.println("[PrestamoDAO] Error SQL al buscar prestamo por ID: " + e.getMessage());
         }
         return null;
     }
@@ -163,7 +192,7 @@ public class PrestamoDAO {
                 lista.add(mapearPrestamo(rs));
             }
         } catch (SQLException e) {
-            System.out.println("[PrestamoDAO] Error SQL al listar préstamos: " + e.getMessage());
+            System.out.println("[PrestamoDAO] Error SQL al listar prestamos: " + e.getMessage());
         }
         return lista;
     }
@@ -183,7 +212,7 @@ public class PrestamoDAO {
                 }
             }
         } catch (SQLException e) {
-            System.out.println("[PrestamoDAO] Error SQL al listar préstamos por cliente: " + e.getMessage());
+            System.out.println("[PrestamoDAO] Error SQL al listar prestamos por cliente: " + e.getMessage());
         }
         return lista;
     }
@@ -203,7 +232,7 @@ public class PrestamoDAO {
                 }
             }
         } catch (SQLException e) {
-            System.out.println("[PrestamoDAO] Error SQL al listar préstamos por empleado: " + e.getMessage());
+            System.out.println("[PrestamoDAO] Error SQL al listar prestamos por empleado: " + e.getMessage());
         }
         return lista;
     }
@@ -282,71 +311,7 @@ public class PrestamoDAO {
     }
 
     private void calcularPlanAmortizacion(Prestamo p) {
-        BigDecimal P = p.getMontoCapital();
-        int n = p.getPlazoCuotas();
-        LocalDate fechaInicio = p.getFechaInicio() != null ? p.getFechaInicio() : LocalDate.now();
-        BigDecimal tasaAnual = p.getTasaInteresAnual();
-
-        BigDecimal i = tasaAnual.divide(BigDecimal.valueOf(1200), 10, RoundingMode.HALF_UP);
-
-        List<Cuota> cuotas = new ArrayList<>();
-        BigDecimal saldoRestante = P;
-        BigDecimal sumaTotal = BigDecimal.ZERO;
-
-        if (p.getModalidad() == ModalidadAmortizacion.FRANCES) {
-
-            BigDecimal C;
-            if (i.compareTo(BigDecimal.ZERO) == 0) {
-                C = P.divide(BigDecimal.valueOf(n), 2, RoundingMode.HALF_UP);
-            } else {
-
-                double factor = 1.0 - Math.pow(1.0 + i.doubleValue(), -n);
-                C = P.multiply(i).divide(BigDecimal.valueOf(factor), 2, RoundingMode.HALF_UP);
-            }
-
-            p.setValorCuotaReferencia(C);
-
-            for (int k = 1; k <= n; k++) {
-                BigDecimal interes = saldoRestante.multiply(i).setScale(2, RoundingMode.HALF_UP);
-                BigDecimal capital;
-                if (k == n) {
-                    capital = saldoRestante;
-                    C = capital.add(interes);
-                } else {
-                    capital = C.subtract(interes).min(saldoRestante);
-                }
-                saldoRestante = saldoRestante.subtract(capital).max(BigDecimal.ZERO);
-                sumaTotal = sumaTotal.add(C);
-
-                LocalDate vto = fechaInicio.plusMonths(k);
-                Cuota cuota = new Cuota(null, 1, k, vto, C, capital, interes, saldoRestante);
-                cuotas.add(cuota);
-            }
-        } else {
-
-            BigDecimal A = P.divide(BigDecimal.valueOf(n), 2, RoundingMode.HALF_UP);
-
-            for (int k = 1; k <= n; k++) {
-                BigDecimal interes = saldoRestante.multiply(i).setScale(2, RoundingMode.HALF_UP);
-                BigDecimal capital = (k == n) ? saldoRestante : A;
-                BigDecimal cuotaTotal = capital.add(interes);
-
-                if (k == 1) {
-                    p.setValorCuotaReferencia(cuotaTotal);
-                }
-
-                saldoRestante = saldoRestante.subtract(capital).max(BigDecimal.ZERO);
-                sumaTotal = sumaTotal.add(cuotaTotal);
-
-                LocalDate vto = fechaInicio.plusMonths(k);
-                Cuota cuota = new Cuota(null, 1, k, vto, cuotaTotal, capital, interes, saldoRestante);
-                cuotas.add(cuota);
-            }
-        }
-
-        p.setMontoTotal(sumaTotal);
-        p.setSaldoPendiente(P);
-        p.setCuotas(cuotas);
-        p.setEstado(EstadoPrestamo.ACTIVO);
+        CreadorAmortizacion creador = CreadorAmortizacion.obtenerCreador(p.getModalidad());
+        creador.calcular(p);
     }
 }

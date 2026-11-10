@@ -27,7 +27,15 @@ public class AutorizacionService {
     }
 
     public boolean puedeConsultarTodasSolicitudes() {
-        return sesion.tieneRol(Rol.SUPERVISOR, Rol.GERENTE);
+        return sesion.tieneRol(Rol.ASESOR, Rol.SUPERVISOR, Rol.GERENTE);
+    }
+
+    public boolean puedeActualizarSolicitudes() {
+        return sesion.tieneRol(Rol.ASESOR, Rol.SUPERVISOR, Rol.GERENTE);
+    }
+
+    public boolean puedeEliminarSolicitudes() {
+        return sesion.tieneRol(Rol.ASESOR, Rol.SUPERVISOR, Rol.GERENTE);
     }
 
     public boolean puedeAprobarSolicitudes() {
@@ -64,11 +72,11 @@ public class AutorizacionService {
 
     public boolean validarPermiso(boolean permisoConcedido, String operacion) {
         if (!sesion.estaAutenticado()) {
-            System.out.println("\n[ACCESO DENEGADO]: No hay una sesión activa en el sistema.");
+            System.out.println("\n[ACCESO DENEGADO]: No hay una sesion activa en el sistema.");
             return false;
         }
         if (!permisoConcedido) {
-            System.out.printf("\n[ACCESO DENEGADO]: El rol '%s' no tiene autorización para '%s'.\n",
+            System.out.printf("\n[ACCESO DENEGADO]: El rol '%s' no tiene autorizacion para '%s'.\n",
                 sesion.getRol(), operacion);
             return false;
         }

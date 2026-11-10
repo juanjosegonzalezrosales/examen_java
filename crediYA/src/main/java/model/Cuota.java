@@ -205,6 +205,20 @@ public class Cuota implements java.io.Serializable {
                 && getSaldoPendienteCuota().compareTo(BigDecimal.ZERO) > 0;
     }
 
+    public String getEstadoVisual() {
+        return getEstadoVisual(LocalDate.now());
+    }
+
+    public String getEstadoVisual(LocalDate fechaReferencia) {
+        if (estado == EstadoCuota.PAGADA) {
+            return "PAGADA";
+        }
+        if (esVencida(fechaReferencia)) {
+            return "VENCIDA";
+        }
+        return "PENDIENTE";
+    }
+
     @Override
     public String toString() {
         return "Cuota{" +

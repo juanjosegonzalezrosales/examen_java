@@ -9,6 +9,7 @@ public class Credencial implements Serializable {
 
     private Integer id;
     private Integer empleadoId;
+    private Integer clienteId;
     private String passwordHash;
     private String salt;
     private int iteraciones;
@@ -19,16 +20,25 @@ public class Credencial implements Serializable {
         this.iteraciones = 65536;
     }
 
-    public Credencial(Integer id, Integer empleadoId, String passwordHash, String salt, int iteraciones) {
+    public Credencial(Integer id, Integer empleadoId, Integer clienteId, String passwordHash, String salt, int iteraciones) {
         this.id = id;
         this.empleadoId = empleadoId;
+        this.clienteId = clienteId;
         this.passwordHash = passwordHash;
         this.salt = salt;
         this.iteraciones = iteraciones;
     }
 
+    public Credencial(Integer id, Integer empleadoId, String passwordHash, String salt, int iteraciones) {
+        this(id, empleadoId, null, passwordHash, salt, iteraciones);
+    }
+
     public Credencial(Integer empleadoId, String passwordHash, String salt, int iteraciones) {
-        this(null, empleadoId, passwordHash, salt, iteraciones);
+        this(null, empleadoId, null, passwordHash, salt, iteraciones);
+    }
+
+    public static Credencial paraCliente(Integer clienteId, String passwordHash, String salt, int iteraciones) {
+        return new Credencial(null, null, clienteId, passwordHash, salt, iteraciones);
     }
 
     public Integer getId() {
@@ -45,6 +55,14 @@ public class Credencial implements Serializable {
 
     public void setEmpleadoId(Integer empleadoId) {
         this.empleadoId = empleadoId;
+    }
+
+    public Integer getClienteId() {
+        return clienteId;
+    }
+
+    public void setClienteId(Integer clienteId) {
+        this.clienteId = clienteId;
     }
 
     public String getPasswordHash() {
@@ -92,6 +110,7 @@ public class Credencial implements Serializable {
         return "Credencial{" +
                 "id=" + id +
                 ", empleadoId=" + empleadoId +
+                ", clienteId=" + clienteId +
                 ", iteraciones=" + iteraciones +
                 '}';
     }

@@ -142,18 +142,21 @@ public class SolicitudDAO {
     public boolean actualizar(Solicitud solicitud) {
         if (solicitud == null || solicitud.getId() == null) return false;
 
-        String sql = "UPDATE solicitudes SET estado = ?, observaciones = ?, fecha_resolucion = ? WHERE id = ?";
+        String sql = "UPDATE solicitudes SET monto_solicitado = ?, plazo_meses = ?, modalidad = ?, estado = ?, observaciones = ?, fecha_resolucion = ? WHERE id = ?";
         try (Connection con = conexion.conectar();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(1, solicitud.getEstado().name());
-            ps.setString(2, solicitud.getObservaciones());
+            ps.setBigDecimal(1, solicitud.getMontoSolicitado());
+            ps.setInt(2, solicitud.getPlazoMeses());
+            ps.setString(3, solicitud.getModalidad().name());
+            ps.setString(4, solicitud.getEstado().name());
+            ps.setString(5, solicitud.getObservaciones());
             if (solicitud.getFechaResolucion() != null) {
-                ps.setDate(3, Date.valueOf(solicitud.getFechaResolucion()));
+                ps.setDate(6, Date.valueOf(solicitud.getFechaResolucion()));
             } else {
-                ps.setNull(3, Types.DATE);
+                ps.setNull(6, Types.DATE);
             }
-            ps.setInt(4, solicitud.getId());
+            ps.setInt(7, solicitud.getId());
 
             int filas = ps.executeUpdate();
             return filas > 0;
@@ -172,7 +175,7 @@ public class SolicitudDAO {
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             if (e.getErrorCode() == 1451) {
-                System.out.println("[SolicitudDAO] No se puede eliminar la solicitud porque ya tiene un préstamo asociado.");
+                System.out.println("[SolicitudDAO] No se puede eliminar la solicitud porque ya tiene un prestamo asociado.");
             } else {
                 System.out.println("[SolicitudDAO] Error SQL al eliminar solicitud: " + e.getMessage());
             }

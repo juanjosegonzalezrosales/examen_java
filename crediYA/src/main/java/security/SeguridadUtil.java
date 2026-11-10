@@ -27,7 +27,7 @@ public final class SeguridadUtil {
 
     public static String hashearPassword(char[] password, String saltHex, int iteraciones) {
         if (password == null || saltHex == null) {
-            throw new IllegalArgumentException("La contraseña y el salt no pueden ser nulos.");
+            throw new IllegalArgumentException("La contrasena y el salt no pueden ser nulos.");
         }
 
         try {
@@ -38,7 +38,7 @@ public final class SeguridadUtil {
             spec.clearPassword();
             return HexFormat.of().formatHex(hash);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            throw new IllegalStateException("Error al calcular el hash de contraseña: " + e.getMessage(), e);
+            throw new IllegalStateException("Error al calcular el hash de contrasena: " + e.getMessage(), e);
         }
     }
 

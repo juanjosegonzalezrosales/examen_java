@@ -1,5 +1,6 @@
-package chain;
+package model.chain;
 
+import java.math.BigDecimal;
 import model.Empleado;
 import model.Solicitud;
 
@@ -11,5 +12,5 @@ public abstract class ManejadorSolicitud {
         this.siguiente = siguiente;
     }
 
-    public abstract ResultadoCadena procesar(Solicitud solicitud, Empleado evaluador, AccionEvaluacion accion, String notas);
+    public abstract ResultadoCadena evaluar(Solicitud solicitud, Empleado empleado, AccionEvaluacion accion, BigDecimal nuevoMonto);
 }

@@ -1,5 +1,6 @@
 package model;
 
+import exception.ValidacionException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import model.enums.EstadoSolicitud;
@@ -123,6 +124,24 @@ public class Solicitud implements java.io.Serializable {
 
     public void setFechaResolucion(LocalDate fechaResolucion) {
         this.fechaResolucion = fechaResolucion;
+    }
+
+    public void validar() throws ValidacionException {
+        if (cliente == null) {
+            throw new ValidacionException("La solicitud debe estar asociada a un cliente registrado.");
+        }
+        if (empleado == null) {
+            throw new ValidacionException("La solicitud debe contar con un empleado radicador.");
+        }
+        if (montoSolicitado == null || montoSolicitado.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidacionException("El monto solicitado debe ser un valor positivo mayor a cero.");
+        }
+        if (plazoMeses == null || plazoMeses < 1 || plazoMeses > 72) {
+            throw new ValidacionException("El plazo de la solicitud debe estar entre 1 y 72 meses, inclusive.");
+        }
+        if (modalidad == null) {
+            throw new ValidacionException("La modalidad de amortizacion es obligatoria (FRANCES o ALEMAN).");
+        }
     }
 
     @Override

@@ -36,7 +36,7 @@ public class EmpleadoDAO {
         try (Connection con = conexion.conectar()) {
             Integer rolId = obtenerRolId(empleado.getRol(), con);
             if (rolId == null) {
-                System.out.println("[EmpleadoDAO] Error: El rol '" + empleado.getRol() + "' no existe en el catálogo de roles.");
+                System.out.println("[EmpleadoDAO] Error: El rol '" + empleado.getRol() + "' no existe en el catalogo de roles.");
                 return false;
             }
 
@@ -156,7 +156,7 @@ public class EmpleadoDAO {
         try (Connection con = conexion.conectar()) {
             Integer rolId = obtenerRolId(empleado.getRol(), con);
             if (rolId == null) {
-                System.out.println("[EmpleadoDAO] Error: El rol '" + empleado.getRol() + "' no existe en el catálogo de roles.");
+                System.out.println("[EmpleadoDAO] Error: El rol '" + empleado.getRol() + "' no existe en el catalogo de roles.");
                 return false;
             }
 
@@ -225,6 +225,30 @@ public class EmpleadoDAO {
                     return rs.getInt("id");
                 }
             }
+        }
+        return null;
+    }
+
+    public Empleado buscarPrimerPorRol(Rol rol) {
+        if (rol == null) return null;
+        String sql = "SELECT e.id, e.nombre, e.documento, e.correo, e.salario, r.nombre AS rol_nombre "
+                   + "FROM empleados e "
+                   + "INNER JOIN roles r ON e.rol_id = r.id "
+                   + "WHERE r.nombre = ? "
+                   + "ORDER BY e.id ASC LIMIT 1";
+
+        try (Connection con = conexion.conectar();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, rol.name());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapearEmpleado(rs);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("[EmpleadoDAO] Error SQL al buscar empleado por rol: " + e.getMessage());
         }
         return null;
     }

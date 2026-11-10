@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS solicitudes (
     fecha_resolucion DATE NULL,
     CONSTRAINT chk_solicitud_monto CHECK (monto_solicitado > 0),
     CONSTRAINT chk_solicitud_plazo CHECK (plazo_meses > 0),
-    CONSTRAINT chk_solicitud_estado CHECK (estado IN ('PENDIENTE', 'APROBADA', 'RECHAZADA')),
+    CONSTRAINT chk_solicitud_estado CHECK (estado IN ('PENDIENTE', 'APROBADA', 'RECHAZADA', 'DESEMBOLSADO')),
     CONSTRAINT chk_solicitud_modalidad CHECK (modalidad IN ('FRANCES', 'ALEMAN')),
     CONSTRAINT fk_solicitudes_cliente FOREIGN KEY (cliente_id)
         REFERENCES clientes(id)
@@ -147,5 +147,29 @@ CREATE TABLE IF NOT EXISTS pagos (
     CONSTRAINT fk_pagos_cuota_compuesta FOREIGN KEY (cuota_id, prestamo_id)
         REFERENCES cuotas(id, prestamo_id)
         ON UPDATE RESTRICT
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS credenciales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    empleado_id INT NULL UNIQUE,
+    cliente_id INT NULL UNIQUE,
+    password_hash VARCHAR(128) NOT NULL,
+    salt VARCHAR(64) NOT NULL,
+    iteraciones INT NOT NULL DEFAULT 65536,
+    fecha_creacion TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT chk_credencial_entidad CHECK (
+        (empleado_id IS NOT NULL AND cliente_id IS NULL)
+        OR
+        (cliente_id IS NOT NULL AND empleado_id IS NULL)
+    ),
+    CONSTRAINT fk_credenciales_empleado FOREIGN KEY (empleado_id)
+        REFERENCES empleados(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_credenciales_cliente FOREIGN KEY (cliente_id)
+        REFERENCES clientes(id)
+        ON UPDATE CASCADE
         ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
