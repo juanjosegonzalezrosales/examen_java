@@ -61,6 +61,26 @@ public class ReporteView {
             }
         }
     }
+    
+    public void mostrarCuotasVencidasYMorososExamen(List<Prestamo> morosos, LocalDate hoy) {
+        mensajes.encabezado("REPORTE: Prestamos Vencidos con la cuota exacta vencida al corte de " + hoy);
+        if (morosos.isEmpty()) {
+            System.out.println("No existen clientes con cuotas en mora.");
+            return;
+        }
+        for (Prestamo p : morosos) {
+            System.out.printf("\n[MORA] Prestamo #%d | Cliente: %s | Tel: %s | Saldo: $%,.2f\n",
+                p.getId(),
+                p.getCliente() != null ? p.getCliente().getNombre() : "N/A",
+                p.getCliente() != null ? p.getCliente().getTelefono() : "N/A",
+                p.getSaldoPendiente());
+            List<Cuota> vencidas = p.getCuotas().stream().filter(c -> c.esVencida(hoy)).toList();
+            for (Cuota c : vencidas) {
+                System.out.printf("   -> Cuota #%d vencida el %s | Estado: %s | Saldo cuota: $%,.2f (Cap: $%,.2f, Int: $%,.2f)\n",
+                    c.getNumeroCuota(), c.getFechaVencimiento(), c.getEstadoVisual(hoy), c.getSaldoPendienteCuota(), c.getCapitalPendiente(), c.getInteresPendiente());
+            }
+        }
+    }
 
     public void mostrarClientesMorosos(List<Prestamo> morosos) {
         mensajes.encabezado("REPORTE: LISTADO CONSOLIDADO DE CLIENTES MOROSOS");

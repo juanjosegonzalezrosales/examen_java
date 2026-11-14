@@ -38,6 +38,8 @@ public class ReporteController {
     private final ReporteView reporteView;
     private final EntradaConsola entrada;
     private final MensajesView mensajes;
+    private static int vencidos = 0;
+    private static int activos = 0;
 
     public ReporteController(PrestamoDAO prestamoDAO, SolicitudDAO solicitudDAO, ClienteDAO clienteDAO,
                              PagoDAO pagoDAO, AutorizacionService autorizacionService,
@@ -62,7 +64,7 @@ public class ReporteController {
         reporteView.mostrarPrestamosActivos(activos);
         entrada.pausar();
     }
-
+    
     public void reporteCuotasVencidas() {
         List<Prestamo> todos = prestamoDAO.listarTodos();
         LocalDate hoy = LocalDate.now();
@@ -74,6 +76,21 @@ public class ReporteController {
             }
         }
         reporteView.mostrarCuotasVencidasYMorosos(morosos, hoy);
+        entrada.pausar();
+    }
+    
+    public void reporteCuotasVencidasExamen() {
+        vencidos = 0;
+        List<Prestamo> todos = prestamoDAO.listarTodos();
+        LocalDate hoy = LocalDate.now();
+        List<Prestamo> morosos = new ArrayList<>();
+        for (Prestamo p : todos) {
+            Prestamo comp = prestamoDAO.buscarPorId(p.getId());
+            if (comp != null && comp.getCuotas().stream().anyMatch(c -> c.esVencida(hoy))) {
+                morosos.add(comp);
+            }
+        }
+        reporteView.mostrarCuotasVencidasYMorososExamen(morosos, hoy);
         entrada.pausar();
     }
 
