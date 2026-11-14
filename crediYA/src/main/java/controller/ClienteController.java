@@ -36,7 +36,7 @@ public class ClienteController {
         this.credencialDAO = credencialDAO;
         this.autenticacionService = autenticacionService;
         this.autorizacionService = autorizacionService;
-        this.clienteView = clienteView;
+        this.clienteView = clienteView;                                                
         this.entrada = entrada;
         this.mensajes = mensajes;
     }

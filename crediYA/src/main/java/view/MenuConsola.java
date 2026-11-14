@@ -66,13 +66,15 @@ public class MenuConsola {
             System.out.println("====================================");
             System.out.println("1. Iniciar sesion");
             System.out.println("2. Reportes");
+            System.out.println("3. examen");
             System.out.println("0. Salir");
             System.out.println("====================================");
 
-            op = entrada.leerEntero("Seleccione una opcion: ", 0, 2);
+            op = entrada.leerEntero("Seleccione una opcion: ", 0, 3);
             switch (op) {
                 case 1 -> procesarInicioSesion();
                 case 2 -> procesarAccesoReportes();
+                case 3 -> reporteExamen();
                 case 0 -> mensajes.informativo("Gracias por utilizar CrediYA S.A.S. Hasta pronto!");
             }
         } while (op != 0);
@@ -377,4 +379,30 @@ public class MenuConsola {
             }
         } while (op != 0);
     }
+    
+    private void reporteExamen() {
+        int op;
+        do {
+            System.out.println("\n========== REPORTES DEL FUNCIONARIO ==========");
+            System.out.println("1. Prestamos activos");
+            System.out.println("2. Prestamos vencidos");
+            System.out.println("3. Mostrar Resumen");
+            System.out.println("0. Volver");
+            System.out.println("==============================================");
+
+            
+            op = entrada.leerEntero("Seleccione una opcion [0-3]",0,3);
+            switch (op) {
+                case 1 -> reporteController.reportePrestamosActivos();
+                case 2 -> reporteController.reporteCuotasVencidasExamen();
+                case 3 -> reporteController.reporteClientesMorosos();
+                case 4 -> reporteController.reporteDetallesCliente();
+                case 5 -> reporteController.reportePrestamosPagados();
+                case 6 -> reporteController.generarBackupDat();
+            }
+        } while (op != 0);
+    }
+
+    
+    
 }
